@@ -53,17 +53,22 @@ public class MainActivity extends AppCompatActivity {
                 MemberEntry.KEY_FIRST_NAME + " " +
                 MemberEntry.KEY_LAST_NAME + " " +
                 MemberEntry.KEY_GENDER + " " +
-                MemberEntry.KEY_SPORT);
-
+                MemberEntry.KEY_SPORT+"\n");
+          int countColumns = cursor.getColumnCount();
 //        int idIndex = cursor.getColumnIndex(MemberEntry._ID);
 //        int idFirstName = cursor.getColumnIndex(MemberEntry.KEY_FIRST_NAME);
 //        int idLastName = cursor.getColumnIndex(MemberEntry.KEY_LAST_NAME);
 //        int idGender = cursor.getColumnIndex(MemberEntry.KEY_GENDER);
 //        int idSport = cursor.getColumnIndex(MemberEntry.KEY_SPORT);
-
-        while (cursor.moveToNext()){
-          //  int currentId = cursor.getInt(idIndex);
-            tvData.append(DatabaseUtils.dumpCursorToString(cursor));
+        if (cursor.moveToFirst()) {
+            do {
+                for (int i = 0; i < countColumns; i++) {
+                    tvData.append(cursor.getString(i)+" ");
+                }
+                tvData.append("\n");
+                //  int currentId = cursor.getInt(idIndex);
+                //tvData.append(DatabaseUtils.dumpCursorToString(cursor));
+            } while (cursor.moveToNext());
         }
     }
 }

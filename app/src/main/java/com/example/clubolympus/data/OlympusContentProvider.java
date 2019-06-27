@@ -35,7 +35,8 @@ public class OlympusContentProvider extends ContentProvider {
 
     @Override
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
-        try (SQLiteDatabase db = olympusDatabaseHandler.getReadableDatabase()) {
+        SQLiteDatabase db = olympusDatabaseHandler.getReadableDatabase();
+
             int match = sUriMatcher.match(uri);
             switch (match) {
                 case MEMBERS:
@@ -53,7 +54,9 @@ public class OlympusContentProvider extends ContentProvider {
                     throw new IllegalArgumentException("Can't query incorrect URI " + uri);
 
             }
-        }
+
+
+
     }
 
 
