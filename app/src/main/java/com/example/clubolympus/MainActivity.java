@@ -3,18 +3,27 @@ package com.example.clubolympus;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import com.example.clubolympus.data.ClubOlympusContract;
+import com.example.clubolympus.data.OlympusCursorAdapter;
 
 import static com.example.clubolympus.data.ClubOlympusContract.*;
 
-public class MainActivity extends AppCompatActivity {
-    TextView tvData;
+public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+    ListView listView;
+    public static final int MEMBER_LOADER = 123;
+    OlympusCursorAdapter olympusCursorAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,47 +37,54 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
-
-        tvData = findViewById(R.id.tvData);
+        listView = findViewById(R.id.listView);
+        olympusCursorAdapter = new OlympusCursorAdapter(this,null);
+        listView.setAdapter(olympusCursorAdapter);
+        getSupportLoaderManager().initLoader(MEMBER_LOADER,null,this);
     }
 
-    protected void displayData(View view) {
+//    protected void displayData(View view) {
+//        String[] projection = {
+//                MemberEntry._ID,
+//                MemberEntry.KEY_FIRST_NAME,
+//                MemberEntry.KEY_LAST_NAME,
+//                MemberEntry.KEY_GENDER,
+//                MemberEntry.KEY_SPORT};
+//        Cursor cursor = getContentResolver().query(
+//                MemberEntry.CONTENT_URI,
+//                projection,
+//                null,
+//                null,
+//                null);
+//        listView.setAdapter(new OlympusCursorAdapter(this, cursor));
+//    }
+
+    @NonNull
+    @Override
+    public Loader<Cursor> onCreateLoader(int i, @Nullable Bundle bundle) {
         String[] projection = {
                 MemberEntry._ID,
                 MemberEntry.KEY_FIRST_NAME,
                 MemberEntry.KEY_LAST_NAME,
-                MemberEntry.KEY_GENDER,
-                MemberEntry.KEY_SPORT
-        };
-        Cursor cursor = getContentResolver().query(
+                MemberEntry.KEY_SPORT};
+        CursorLoader cursorLoader = new CursorLoader(this,
                 MemberEntry.CONTENT_URI,
                 projection,
                 null,
                 null,
-                null
-        );
+                null);
 
-        tvData.setText("All members\n\n");
-        tvData.append(MemberEntry._ID + " " +
-                MemberEntry.KEY_FIRST_NAME + " " +
-                MemberEntry.KEY_LAST_NAME + " " +
-                MemberEntry.KEY_GENDER + " " +
-                MemberEntry.KEY_SPORT+"\n");
-          int countColumns = cursor.getColumnCount();
-//        int idIndex = cursor.getColumnIndex(MemberEntry._ID);
-//        int FirstNameIndex = cursor.getColumnIndex(MemberEntry.KEY_FIRST_NAME);
-//        int LastNameIndex = cursor.getColumnIndex(MemberEntry.KEY_LAST_NAME);
-//        int GenderIndex = cursor.getColumnIndex(MemberEntry.KEY_GENDER);
-//        int SportIndex = cursor.getColumnIndex(MemberEntry.KEY_SPORT);
-        if (cursor.moveToFirst()) {
-            do {
-                for (int i = 0; i < countColumns; i++) {
-                    tvData.append(cursor.getString(i)+" ");
-                }
-                tvData.append("\n");
-                //  int currentId = cursor.getInt(idIndex);
-                //tvData.append(DatabaseUtils.dumpCursorToString(cursor));
-            } while (cursor.moveToNext());
-        }
+        return cursorLoader;
+    }
+
+    @Override
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
+        olympusCursorAdapter.swapCursor(cursor);
+
+    }
+
+    @Override
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
+        olympusCursorAdapter.swapCursor(null);
     }
 }
