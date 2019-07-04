@@ -37,23 +37,28 @@ public class OlympusContentProvider extends ContentProvider {
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
         SQLiteDatabase db = olympusDatabaseHandler.getReadableDatabase();
         int match = sUriMatcher.match(uri);
+        Cursor cursor;
+
         switch (match) {
             case MEMBERS:
-                return db.query(MemberEntry.TABLE_NAME,
+                cursor = db.query(MemberEntry.TABLE_NAME,
                         projection, selection, selectionArgs,
                         null, null, sortOrder);
+                break;
             case MEMBERS_ID:
                 selection = MemberEntry._ID + "=?";
                 selectionArgs = new String[]{String.valueOf(ContentUris.parseId(uri))};
-                return db.query(MemberEntry.TABLE_NAME,
+                cursor = db.query(MemberEntry.TABLE_NAME,
                         projection, selection, selectionArgs,
                         null, null, sortOrder);
+                break;
             default:
                 Log.e("logCat", "Can't query incorrect URI " + uri);
                 throw new IllegalArgumentException("Can't query incorrect URI " + uri);
 
         }
-
+        cursor.setNotificationUri(getContext().getContentResolver(), uri);
+        return cursor;
 
     }
 
@@ -107,6 +112,7 @@ public class OlympusContentProvider extends ContentProvider {
                     Log.e("logCat", "Insertion of data in the table failed for " + uri);
                     return null;
                 }
+                getContext().getContentResolver().notifyChange(uri, null);
                 return ContentUris.withAppendedId(uri, id);
             } else {
                 Log.e("logCat", "Insertion of data in the table failed for " + uri);
@@ -120,17 +126,29 @@ public class OlympusContentProvider extends ContentProvider {
         SQLiteDatabase db = olympusDatabaseHandler.getWritableDatabase();
 
         int match = sUriMatcher.match(uri);
+        int rowsDeleted;
+
         switch (match) {
             case MEMBERS:
-                return db.delete(MemberEntry.TABLE_NAME, selection, selectionArgs);
+                rowsDeleted = db.delete(MemberEntry.TABLE_NAME, selection, selectionArgs);
+
+                break;
             case MEMBERS_ID:
                 selection = MemberEntry._ID + "=?";
                 selectionArgs = new String[]{String.valueOf(ContentUris.parseId(uri))};
-                return db.delete(MemberEntry.TABLE_NAME, selection, selectionArgs);
+                rowsDeleted = db.delete(MemberEntry.TABLE_NAME, selection, selectionArgs);
+
+                break;
             default:
                 Log.e("logCat", "Can't delete this URI " + uri);
                 throw new IllegalArgumentException("Can't delete this URI " + uri);
         }
+
+        if (rowsDeleted != 0) {
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+
+        return rowsDeleted;
     }
 
     @Override
@@ -168,16 +186,28 @@ public class OlympusContentProvider extends ContentProvider {
         SQLiteDatabase db = olympusDatabaseHandler.getWritableDatabase();
 
         int match = sUriMatcher.match(uri);
+
+
+        int rowsUpdated;
+
         switch (match) {
             case MEMBERS:
-                return db.update(MemberEntry.TABLE_NAME, values, selection, selectionArgs);
+                rowsUpdated = db.update(MemberEntry.TABLE_NAME, values, selection, selectionArgs);
+                break;
             case MEMBERS_ID:
                 selection = MemberEntry._ID + "=?";
                 selectionArgs = new String[]{String.valueOf(ContentUris.parseId(uri))};
-                return db.update(MemberEntry.TABLE_NAME, values, selection, selectionArgs);
+                rowsUpdated = db.update(MemberEntry.TABLE_NAME, values, selection, selectionArgs);
+                break;
             default:
                 Log.e("logCat", "Can't update this URI " + uri);
                 throw new IllegalArgumentException("Can't update this URI " + uri);
         }
+
+        if (rowsUpdated != 0) {
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+
+        return rowsUpdated;
     }
 }
