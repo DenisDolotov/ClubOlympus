@@ -2,6 +2,7 @@ package com.example.clubolympus;
 
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -11,6 +12,7 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.app.NavUtils;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -25,7 +27,7 @@ import android.widget.Toast;
 
 import com.example.clubolympus.data.ClubOlympusContract.MemberEntry;
 
-public class AddMemberActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>{
+public class AddMemberActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final int EDIT_MEMBER_LOADER = 333;
     private EditText etFirstName;
     private EditText etLastName;
@@ -46,15 +48,55 @@ public class AddMemberActivity extends AppCompatActivity implements LoaderManage
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.save_member:
-                insertMember();
+                saveMember();
                 return true;
             case R.id.delete_member:
+                showDeleteMemberDialog();
                 return true;
             case android.R.id.home:
                 NavUtils.navigateUpFromSameTask(this);
                 return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showDeleteMemberDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Do you want delete the member?");
+        builder.setPositiveButton("Delete",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        deleteMember();
+                    }
+                });
+        builder.setNegativeButton("Cancel",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        if (dialog!=null){
+                            dialog.dismiss();
+                        }
+                    }
+                });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    private void deleteMember() {
+        if (currentMemberUri!=null){
+            int rowsDeleted = getContentResolver()
+                    .delete(currentMemberUri, null, null);
+            if (rowsDeleted==0){
+                Toast.makeText(this, "Deleting of data from the table failed",
+                        Toast.LENGTH_LONG).show();
+            }else {
+                Toast.makeText(this, "Member Deleted",
+                        Toast.LENGTH_LONG).show();
+                finish();
+            }
+        }
     }
 
     @Override
@@ -66,12 +108,14 @@ public class AddMemberActivity extends AppCompatActivity implements LoaderManage
 
         currentMemberUri = intent.getData();
 
-        if (currentMemberUri == null){
+        if (currentMemberUri == null) {
             setTitle("Add a Member");
-        }else {
+            invalidateOptionsMenu();
+        } else {
             setTitle("Edit the Member");
+            getSupportLoaderManager().initLoader(EDIT_MEMBER_LOADER, null, this);
         }
-        getSupportLoaderManager().initLoader(EDIT_MEMBER_LOADER,null,this);
+
 
         etFirstName = findViewById(R.id.etFirstName);
         etLastName = findViewById(R.id.etLastName);
@@ -109,10 +153,33 @@ public class AddMemberActivity extends AppCompatActivity implements LoaderManage
 
     }
 
-    private void insertMember() {
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        super.onPrepareOptionsMenu(menu);
+        if (currentMemberUri==null){
+            MenuItem menuItem = menu.findItem(R.id.delete_member);
+            menuItem.setVisible(false);
+        }
+        return true;
+    }
+
+    private void saveMember() {
         String firstName = etFirstName.getText().toString().trim();
         String lastName = etLastName.getText().toString().trim();
         String sport = etSport.getText().toString().trim();
+
+        if (firstName.isEmpty()){
+            Toast.makeText(this, "Enter the first name", Toast.LENGTH_LONG).show();
+            return;
+        }else
+        if (lastName.isEmpty()){
+            Toast.makeText(this, "Enter the last name", Toast.LENGTH_LONG).show();
+            return;
+        }else
+        if (sport.isEmpty()){
+            Toast.makeText(this, "Enter the sport", Toast.LENGTH_LONG).show();
+            return;
+        }
 
         ContentValues contentValues = new ContentValues();
         contentValues.put(MemberEntry.KEY_FIRST_NAME, firstName);
@@ -120,12 +187,28 @@ public class AddMemberActivity extends AppCompatActivity implements LoaderManage
         contentValues.put(MemberEntry.KEY_GENDER, gender.toString());
         contentValues.put(MemberEntry.KEY_SPORT, sport);
 
-        ContentResolver contentResolver = getContentResolver();
-        Uri uri = contentResolver.insert(MemberEntry.CONTENT_URI,contentValues);
-        if (uri==null){
-            Toast.makeText(this, "Insertion of data in the table failed", Toast.LENGTH_LONG).show();
+        if (currentMemberUri == null) {
+            ContentResolver contentResolver = getContentResolver();
+            Uri uri = contentResolver.insert(MemberEntry.CONTENT_URI, contentValues);
+            if (uri == null) {
+                Toast.makeText(this, "Insertion of data in the table failed",
+                        Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(this, "Data saved",
+                        Toast.LENGTH_LONG).show();
+                finish();
+            }
         } else {
-            Toast.makeText(this, "Data saved", Toast.LENGTH_LONG).show();
+            int rowsChanged = getContentResolver()
+                    .update(currentMemberUri, contentValues, null, null);
+            if (rowsChanged==0){
+                Toast.makeText(this, "Saving of data in the table failed",
+                        Toast.LENGTH_LONG).show();
+            }else {
+                Toast.makeText(this, "Member updated",
+                        Toast.LENGTH_LONG).show();
+                finish();
+            }
         }
     }
 
@@ -150,7 +233,7 @@ public class AddMemberActivity extends AppCompatActivity implements LoaderManage
 
     @Override
     public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
-        if (cursor.moveToFirst()){
+        if (cursor.moveToFirst()) {
             int firstNameIndex = cursor.getColumnIndex(MemberEntry.KEY_FIRST_NAME);
             int lastNameIndex = cursor.getColumnIndex(MemberEntry.KEY_LAST_NAME);
             int genderIndex = cursor.getColumnIndex(MemberEntry.KEY_GENDER);
@@ -165,10 +248,24 @@ public class AddMemberActivity extends AppCompatActivity implements LoaderManage
             etLastName.setText(lastName);
             etSport.setText(sport);
 
-//            switch (MemberEntry.GENDER.valueOf(gender)){
-//                case MemberEntry.GENDER.UNKNOWN:
-//
-//            }
+            if (MemberEntry.GENDER.valueFromString(gender) == null) {
+                spinnerGender.setSelection(0);
+            } else {
+                switch (MemberEntry.GENDER.valueFromString(gender)) {
+                    case UNKNOWN:
+                        spinnerGender.setSelection(0);
+                        break;
+                    case MALE:
+                        spinnerGender.setSelection(1);
+                        break;
+                    case FEMALE:
+                        spinnerGender.setSelection(2);
+                        break;
+                    default:
+                        spinnerGender.setSelection(0);
+                        break;
+                }
+            }
         }
     }
 

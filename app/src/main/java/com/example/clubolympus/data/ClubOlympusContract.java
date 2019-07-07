@@ -31,25 +31,27 @@ public final class ClubOlympusContract {
             UNKNOWN("Unknown"),
             MALE("Male"),
             FEMALE("Female");
-            String s;
+            String text;
 
             GENDER(String s) {
-                this.s = s;
+                this.text = s;
             }
 
-            public static boolean contains(String gender) {
-                for (GENDER g : GENDER.values()) {
-                    if (gender.equals(g.toString())) {
-                        return true;
+            public static GENDER valueFromString(String s) {
+                if (s != null) {
+                    for (GENDER gender : GENDER.values()) {
+                        if (gender.text.equalsIgnoreCase(s)) {
+                            return gender;
+                        }
                     }
                 }
-                return true;
+                return null;
             }
 
 
             @Override
             public String toString() {
-                return s;
+                return text;
             }
         }
     }

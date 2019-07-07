@@ -99,7 +99,7 @@ public class OlympusContentProvider extends ContentProvider {
             if (gender == null) {
                 throw new IllegalArgumentException("Gender is NULL");
             }
-            if (!MemberEntry.GENDER.contains(gender)) {
+            if (MemberEntry.GENDER.valueFromString(gender)==null) {
                 throw new IllegalArgumentException("Gender is invalid");
             }
         }
@@ -177,7 +177,7 @@ public class OlympusContentProvider extends ContentProvider {
                 if (gender == null) {
                     throw new IllegalArgumentException("Sport is NULL");
                 }
-                if (!MemberEntry.GENDER.contains(gender)) {
+                if (MemberEntry.GENDER.valueFromString(gender)==null) {
                     throw new IllegalArgumentException("Sport is invalid");
                 }
             }
